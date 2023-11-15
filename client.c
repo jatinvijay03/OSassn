@@ -7,13 +7,13 @@
 
 struct message {
     long mtype;
-    char mtext[100];
+    char tuple[100];
 };
 typedef struct message message;
 
 int main() {
     key_t key;
-    int msgid;
+    int msqid;
 
     key = ftok("load_balancer.c", 'A');
     if (key == -1) {
@@ -21,8 +21,8 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    msgid = msgget(key, 0);
-    if (msgid == -1) {
+    msqid = msgget(key, 0);
+    if (msqid == -1) {
         perror("Error opening message queue");
         exit(EXIT_FAILURE);
     }
@@ -43,13 +43,18 @@ int main() {
     char seq[20], op[20];
     snprintf(seq, sizeof(seq), "%d", sequenceNumber);
     snprintf(op, sizeof(op), "%d", operationNumber);
-    strcpy(sendMessage.mtext, seq);
-    strcat(sendMessage.mtext, " ");
-    strcat(sendMessage.mtext, op);
-    strcat(sendMessage.mtext, " ");
-    strcat(sendMessage.mtext, graphFileName);
+    strcpy(sendMessage.tuple, seq);
+    strcat(sendMessage.tuple, " ");
+    strcat(sendMessage.tuple, op);
+    strcat(sendMessage.tuple, " ");
+    strcat(sendMessage.tuple, graphFileName);
+    sendMessage.mtype = 1;
+    if (msgsnd(msqid, &message, sizeof(message.mtext), 0) == -1) {
+        printf("Error in sending message to load balancer\n");
+        exit(-1);
+    }
 
-    if (operationNumber == '1' || operationNumber == '2') {
+    if (operationNumber == 1 || operationNumber == 2) {
         int numNodes;
         printf("Enter number of nodes of the graph: ");
         scanf("%d", &numNodes);

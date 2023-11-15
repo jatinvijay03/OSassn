@@ -37,7 +37,6 @@ int main() {
             perror("Error creating control file");
             exit(EXIT_FAILURE);
         }
-        close(control_fd);
 
         printf("Message queue created successfully by the load balancer\n");
     } else {
