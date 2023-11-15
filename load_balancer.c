@@ -57,10 +57,12 @@ int main() {
                 exit(EXIT_FAILURE);
             }
             if(opNum == 1 || opNum == 2) {
-                // logic for creating primary server
+                // logic for primary server
+                // use mtype 2 here
             }
             else if(opNum == 3 || opNum == 4){
-                // logic for creating secondary server
+                // logic for secondary server
+                // use mtype 3 here
             }
             else {
                 fprintf(stderr,"Invalid operation number")
