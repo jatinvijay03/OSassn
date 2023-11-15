@@ -58,14 +58,32 @@ int main() {
             }
             if(opNum == 1 || opNum == 2) {
                 // logic for primary server
-                // use mtype 2 here
+                message writeMessage;
+                writeMessage.mtype = 2;
+                snprintf(writeMessage.mtext, sizeof(writeMessage.mtext), "%d", opNum);
+                strcat(writeMessage.mtext," ");
+                strcat(writeMessage.mtext,graphFileName);
+
+                if (msgsnd(msqid, &writeMessage, sizeof(writeMessage.mtext), 0) == -1) {
+                    perror("Error sending message to the primary server");
+                    exit(EXIT_FAILURE);
+                }
             }
             else if(opNum == 3 || opNum == 4){
                 // logic for secondary server
-                // use mtype 3 here
+                message readMessage;
+                readMessage.mtype = 3;
+                snprintf(readMessage.mtext, sizeof(readMessage.mtext), "%d", opNum);
+                strcat(readMessage.mtext," ");
+                strcat(readMessage.mtext,graphFileName);
+
+                if (msgsnd(msqid, &readMessage, sizeof(readMessage.mtext), 0) == -1) {
+                    perror("Error sending message to the secondary server");
+                    exit(EXIT_FAILURE);
+                }
             }
             else {
-                fprintf(stderr,"Invalid operation number")
+                fprintf(stderr,"Invalid operation number");
             }
 
         }
