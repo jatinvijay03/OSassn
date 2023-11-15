@@ -47,8 +47,25 @@ int main() {
             perror("Error receiving message from the client");
             exit(EXIT_FAILURE);
         }
+        // mtype 1 for client sending tuple to the load balancer
         if (receiveMessage.mtype == 1) {
-            printf("%s\n", receiveMessage.mtext);
+            int seqNum, opNum;
+            char graphFileName[50];
+
+            if (sscanf(receiveMessage.mtext, "%d %d %49s", &seqNum, &opNum, graphFileName) != 3) {
+                fprintf(stderr, "Error parsing the received message\n");
+                exit(EXIT_FAILURE);
+            }
+            if(opNum == 1 || opNum == 2) {
+                // logic for creating primary server
+            }
+            else if(opNum == 3 || opNum == 4){
+                // logic for creating secondary server
+            }
+            else {
+                fprintf(stderr,"Invalid operation number")
+            }
+
         }
     }
 
