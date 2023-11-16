@@ -1,9 +1,9 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
+#include <sys/shm.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 struct message {
     long mtype;
@@ -43,4 +43,21 @@ int main() {
     printf("Received operation from load balancer: %d\n", operation);
     printf("Received graph file name: %s\n", graphFileName);
 
+    int shmid = shmget(key, sizeof(int), 0666);
+    if (shmid == -1) {
+        perror("Error getting shared memory");
+        exit(EXIT_FAILURE);
+    }
+    int *sharedData = (int *)shmat(shmid, NULL, 0);
+    if ((intptr_t)sharedData == -1) {
+        perror("Error attaching to shared memory");
+        exit(EXIT_FAILURE);
+    }
+    printf("Data read from shared memory: %d\n", *sharedData);
+    if (shmdt(sharedData) == -1) {
+        perror("Error detaching from shared memory");
+        exit(EXIT_FAILURE);
+    }
+
+    return 0;
 }

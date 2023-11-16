@@ -84,6 +84,21 @@ int main() {
             int startVertex;
             printf("Enter the starting vertex: ");
             scanf("%d", &startVertex);
+            int shmid = shmget(key, sizeof(int), IPC_CREAT | 0666);
+            if (shmid == -1) {
+                perror("Error creating shared memory");
+                exit(EXIT_FAILURE);
+            }
+            int *sharedData = (int *)shmat(shmid, NULL, 0);
+            if ((intptr_t)sharedData == -1) {
+                perror("Error attaching to shared memory");
+                exit(EXIT_FAILURE);
+            }
+            *sharedData = startVertex;
+            if(shmdt(sharedData) == -1) {
+                perror("Error detaching from shared memory");
+                exit(EXIT_FAILURE);
+            }
         }
     }
 }
