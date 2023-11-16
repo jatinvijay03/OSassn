@@ -1,6 +1,7 @@
 #include <sys/types.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
+#include <sys/shm.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -59,16 +60,26 @@ int main() {
             int numNodes;
             printf("Enter number of nodes of the graph: ");
             scanf("%d", &numNodes);
-            int **adjMatrix = (int **)malloc(numNodes * sizeof(int *));
-            for (int i = 0; i < numNodes; i++) {
-                adjMatrix[i] = (int *)malloc(numNodes * sizeof(int));
-            }
-            printf("Enter the adjacency matrix, each row on a separate line, and elements of a single row separated by whitespace characters:\n");
-            for (int i = 0; i < numNodes; i++) {
-                for (int j = 0; j < numNodes; j++) {
-                    scanf("%d", &adjMatrix[i][j]);
-                }
-            }
+//            int shmidNodes = shmget(key, ((numNodes * numNodes)+1) * sizeof(int *), IPC_CREAT | 0666);
+//            if(shmidNodes == -1) {
+//                perror("Error creating the shared memory");
+//                exit(-2);
+//            }
+//            int *noNodes = shmat(shmidNodes,NULL,0);
+//            *noNodes = numNodes;
+//
+//            int shmidAdjMatrix = shmget(key, (numNodes * numNodes) * sizeof(int), IPC_CREAT | 0666);
+//            if (shmidAdjMatrix == -1) {
+//                perror("Error creating the shared memory for adjMatrix");
+//                exit(EXIT_FAILURE);
+//            }
+//            int *adjMatrixPtr = shmat(shmidAdjMatrix, NULL, 0);
+//            printf("Enter the adjacency matrix, each row on a separate line, and elements of a single row separated by whitespace characters:\n");
+//            for (int i = 0; i < numNodes; i++) {
+//                for (int j = 0; j < numNodes; j++) {
+//                    scanf("%d", &adjMatrixPtr[i * numNodes + j]);
+//                }
+//            }
         } else {
             int startVertex;
             printf("Enter the starting vertex: ");
