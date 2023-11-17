@@ -84,5 +84,14 @@ int main() {
         pthread_t tid;
         pthread_create(&tid,NULL,makeModify,graphFileName);
         pthread_join(tid,NULL);
+        message successMessage;
+        successMessage.mtype = 4;
+        strcpy(successMessage.mtext,"Succesfully Modified file\n");
+        if (msgsnd(msqid, &successMessage, sizeof(successMessage.mtext), 0) == -1) 
+        {
+            perror("Error sending message to the client");
+            exit(EXIT_FAILURE);
+        }
+
     }
 }

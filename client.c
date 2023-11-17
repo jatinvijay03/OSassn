@@ -69,12 +69,6 @@ int main() {
             *shmptr = numNodes;
             shmptr++;
             int adjMatrix[numNodes][numNodes];
-            // int shmidAdjMatrix = shmget(key, (numNodes * numNodes) * sizeof(int), IPC_CREAT | 0666);
-            // if (shmidAdjMatrix == -1) {
-            //     perror("Error creating the shared memory for adjMatrix");
-            //     exit(EXIT_FAILURE);
-            // }
-            //int *adjMatrixPtr = (int *)shmat(shmidAdjMatrix, NULL, 0);
             printf("Enter the adjacency matrix, each row on a separate line, and elements of a single row separated by whitespace characters:\n");
             for (int i = 0; i < numNodes; i++) {
                 for (int j = 0; j < numNodes; j++) {
@@ -95,6 +89,13 @@ int main() {
                 perror("Error removing shared memory segment");
                 exit(EXIT_FAILURE);
             }
+            message receiveSuccessMessage;
+            receiveSuccessMessage.mtype = 4;
+            if (msgrcv(msqid, &receiveSuccessMessage, sizeof(receiveSuccessMessage.mtext), 4, 0) == -1) {
+                perror("Error receiving message from the load balancer");
+                exit(EXIT_FAILURE);
+            }
+            printf("%s",receiveSuccessMessage.mtext);
         } 
         else 
         {
