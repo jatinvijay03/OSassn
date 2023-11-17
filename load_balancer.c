@@ -85,7 +85,6 @@ int main() {
             else {
                 fprintf(stderr,"Invalid operation number");
             }
-
         }
     }
 

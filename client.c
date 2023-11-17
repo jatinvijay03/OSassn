@@ -5,6 +5,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+
+#define buf 1000*sizeof(int)
 
 struct message {
     long mtype;
@@ -51,54 +54,60 @@ int main() {
         strcat(sendMessage.mtext, " ");
         strcat(sendMessage.mtext, graphFileName);
         sendMessage.mtype = 1;
-        if (msgsnd(msqid, &sendMessage, sizeof(sendMessage.mtext), 0) == -1) {
-            printf("Error in sending message to load balancer\n");
-            exit(-1);
-        }
-
+        key_t newkey=ftok("client.c", 'B');
         if (operationNumber == 1 || operationNumber == 2) {
             int numNodes;
             printf("Enter number of nodes of the graph: ");
             scanf("%d", &numNodes);
-//            int shmidNodes = shmget(key, ((numNodes * numNodes)+1) * sizeof(int *), IPC_CREAT | 0666);
-//            if(shmidNodes == -1) {
-//                perror("Error creating the shared memory");
-//                exit(-2);
-//            }
-//            int *noNodes = shmat(shmidNodes,NULL,0);
-//            *noNodes = numNodes;
-//
-//            int shmidAdjMatrix = shmget(key, (numNodes * numNodes) * sizeof(int), IPC_CREAT | 0666);
-//            if (shmidAdjMatrix == -1) {
-//                perror("Error creating the shared memory for adjMatrix");
-//                exit(EXIT_FAILURE);
-//            }
-//            int *adjMatrixPtr = shmat(shmidAdjMatrix, NULL, 0);
-//            printf("Enter the adjacency matrix, each row on a separate line, and elements of a single row separated by whitespace characters:\n");
-//            for (int i = 0; i < numNodes; i++) {
-//                for (int j = 0; j < numNodes; j++) {
-//                    scanf("%d", &adjMatrixPtr[i * numNodes + j]);
-//                }
-//            }
-        } else {
+            
+            int shmid = shmget(newkey, buf, IPC_CREAT | 0666);
+            if(shmid == -1) {
+                perror("Error creating the shared memory");
+                exit(-2);
+            }
+            int *shmptr = (int *)shmat(shmid,NULL,0);
+            *shmptr = numNodes;
+            shmptr++;
+            int adjMatrix[numNodes][numNodes];
+            // int shmidAdjMatrix = shmget(key, (numNodes * numNodes) * sizeof(int), IPC_CREAT | 0666);
+            // if (shmidAdjMatrix == -1) {
+            //     perror("Error creating the shared memory for adjMatrix");
+            //     exit(EXIT_FAILURE);
+            // }
+            //int *adjMatrixPtr = (int *)shmat(shmidAdjMatrix, NULL, 0);
+            printf("Enter the adjacency matrix, each row on a separate line, and elements of a single row separated by whitespace characters:\n");
+            for (int i = 0; i < numNodes; i++) {
+                for (int j = 0; j < numNodes; j++) {
+                    scanf("%d", &adjMatrix[i][j]);
+                    *shmptr=adjMatrix[i][j];
+                    shmptr++;
+                }
+            }
+            
+            shmdt(shmptr);
+            if (msgsnd(msqid, &sendMessage, sizeof(sendMessage.mtext), 0) == -1) {
+            printf("Error in sending message to load balancer\n");
+            exit(-1);
+            }
+            sleep(10);
+            if (shmctl(shmid, IPC_RMID, NULL) == -1) 
+            {
+                perror("Error removing shared memory segment");
+                exit(EXIT_FAILURE);
+            }
+        } 
+        else 
+        {
             int startVertex;
             printf("Enter the starting vertex: ");
             scanf("%d", &startVertex);
-            int shmid = shmget(key, sizeof(int), IPC_CREAT | 0666);
-            if (shmid == -1) {
-                perror("Error creating shared memory");
-                exit(EXIT_FAILURE);
+            int shmid = shmget(newkey, buf, IPC_CREAT | 0666);
+            if(shmid == -1) {
+                perror("Error creating the shared memory");
+                exit(-2);
             }
-            int *sharedData = (int *)shmat(shmid, NULL, 0);
-            if ((intptr_t)sharedData == -1) {
-                perror("Error attaching to shared memory");
-                exit(EXIT_FAILURE);
-            }
-            *sharedData = startVertex;
-            if(shmdt(sharedData) == -1) {
-                perror("Error detaching from shared memory");
-                exit(EXIT_FAILURE);
-            }
+            int *shmptr = (int *)shmat(shmid,NULL,0);
+            *shmptr = startVertex;
         }
     }
 }
