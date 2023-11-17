@@ -33,27 +33,28 @@ int main() {
     printf("Message queue created/opened successfully by the client.\n");
 
     message sendMessage;
-    int sequenceNumber, operationNumber;
+    char sequenceNumber[4];
+    int operationNumber;
     char *graphFileName = (char *)malloc(50 * sizeof(char));
 
     while (1) {
         printf("1. Add a new graph to the database\n2. Modify an existing graph of the database\n3. Perform DFS on an existing graph of the database\n4. Perform BFS on an existing graph of the database\n");
         printf("Enter the sequence number: ");
-        scanf("%d", &sequenceNumber);
+        scanf("%s", sequenceNumber);
         printf("Enter the operation number: ");
         scanf("%d", &operationNumber);
         printf("Enter the graph file name: ");
         scanf("%s", graphFileName);
 
         char seq[20], op[20];
-        snprintf(seq, sizeof(seq), "%d", sequenceNumber);
+        snprintf(seq, sizeof(seq), "%s", sequenceNumber);
         snprintf(op, sizeof(op), "%d", operationNumber);
         strcpy(sendMessage.mtext, seq);
         strcat(sendMessage.mtext, " ");
         strcat(sendMessage.mtext, op);
         strcat(sendMessage.mtext, " ");
         strcat(sendMessage.mtext, graphFileName);
-        sendMessage.mtype = 1;
+        sendMessage.mtype = atoi(sequenceNumber);
         key_t newkey=ftok("client.c", 'B');
         if (operationNumber == 1 || operationNumber == 2) {
             int numNodes;
@@ -78,24 +79,25 @@ int main() {
                 }
             }
             
-            shmdt(shmptr);
+            
             if (msgsnd(msqid, &sendMessage, sizeof(sendMessage.mtext), 0) == -1) {
             printf("Error in sending message to load balancer\n");
             exit(-1);
             }
-            sleep(10);
+            
+            message receiveSuccessMessage;
+          
+            if (msgrcv(msqid, &receiveSuccessMessage, sizeof(receiveSuccessMessage.mtext), atoi(sequenceNumber)+1000, 0) == -1) {
+                perror("Error receiving message from the load balancer");
+                exit(EXIT_FAILURE);
+            }
+            printf("%s",receiveSuccessMessage.mtext);
+            shmdt(shmptr);
             if (shmctl(shmid, IPC_RMID, NULL) == -1) 
             {
                 perror("Error removing shared memory segment");
                 exit(EXIT_FAILURE);
             }
-            message receiveSuccessMessage;
-            receiveSuccessMessage.mtype = 4;
-            if (msgrcv(msqid, &receiveSuccessMessage, sizeof(receiveSuccessMessage.mtext), 4, 0) == -1) {
-                perror("Error receiving message from the load balancer");
-                exit(EXIT_FAILURE);
-            }
-            printf("%s",receiveSuccessMessage.mtext);
         } 
         else 
         {

@@ -30,11 +30,16 @@ int main() {
     while(1) {
         printf("Want to terminate the application? Press Y(Yes) or N(No)");
         scanf("%c",&isTerminate);
-        if(isTerminate == 'N' || isTerminate == 'n') {
+        if(isTerminate == 'Y' || isTerminate == 'y') {
+            // Send terminate message to all the load balancer
             message terminateMessage;
-            terminateMessage.mtype = 6;
-
+            terminateMessage.mtype = 101;
+            strcpy(terminateMessage.mtext, "Terminate");
+            if (msgsnd(msqid, &terminateMessage, sizeof(terminateMessage.mtext), 0) == -1) {
+                perror("Error sending message");
+                exit(EXIT_FAILURE);
+            }
+            exit(0);
         }
     }
-
 }

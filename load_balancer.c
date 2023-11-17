@@ -10,81 +10,144 @@
 #define CONTROL_FILE "queue_control_file"
 #define PERMISSIONS 0666
 
-struct message {
+struct message
+{
     long mtype;
     char mtext[100];
 };
 typedef struct message message;
 
-int main() {
+int main()
+{
     key_t key;
     int msqid;
     message receiveMessage;
 
-    if (access(CONTROL_FILE, F_OK) == -1) {
+    if (access(CONTROL_FILE, F_OK) == -1)
+    {
         key = ftok("load_balancer.c", 'A');
-        if (key == -1) {
+        if (key == -1)
+        {
             perror("Error generating key");
             exit(EXIT_FAILURE);
         }
         msqid = msgget(key, IPC_CREAT | PERMISSIONS);
-        if (msqid == -1) {
+        if (msqid == -1)
+        {
             perror("Error creating message queue");
             exit(EXIT_FAILURE);
         }
         int control_fd = open(CONTROL_FILE, O_CREAT | O_WRONLY, PERMISSIONS);
-        if (control_fd == -1) {
+        if (control_fd == -1)
+        {
             perror("Error creating control file");
             exit(EXIT_FAILURE);
         }
         printf("Message queue created successfully by the load balancer\n");
-    } else {
+    }
+    else
+    {
         printf("Message queue already exists. No need to create by the load balancer\n");
     }
 
-    while (1) {
-        if (msgrcv(msqid, &receiveMessage, sizeof(receiveMessage.mtext), 1, 0) == -1) {
+    while (1)
+    {
+
+        if (msgrcv(msqid, &receiveMessage, sizeof(receiveMessage.mtext), -101, 0) == -1)
+        {
             perror("Error receiving message from the client");
             exit(EXIT_FAILURE);
         }
         // mtype 1 for client sending tuple to the load balancer
-        if (receiveMessage.mtype == 1) {
-            int seqNum, opNum;
-            char graphFileName[50];
 
-            if (sscanf(receiveMessage.mtext, "%d %d %49s", &seqNum, &opNum, graphFileName) != 3) {
-                fprintf(stderr, "Error parsing the received message\n");
+        if (receiveMessage.mtype == 101)
+        {
+            printf("Terminate message received by the load balancer\n");
+            message terminateMessagePrimary;
+            message terminateMessageSecondary1;
+            message terminateMessageSecondary2;
+            terminateMessagePrimary.mtype = 102;
+            strcpy(terminateMessagePrimary.mtext, "Terminate");
+            terminateMessageSecondary1.mtype = 103;
+            strcpy(terminateMessagePrimary.mtext, "Terminate");
+            terminateMessageSecondary2.mtype = 108;
+            strcpy(terminateMessagePrimary.mtext, "Terminate");
+            if (msgsnd(msqid, &terminateMessagePrimary, sizeof(terminateMessagePrimary.mtext), 0) == -1)
+            {
+                perror("Error sending message");
                 exit(EXIT_FAILURE);
             }
-            if(opNum == 1 || opNum == 2) {
-                // logic for primary server
-                message writeMessage;
-                writeMessage.mtype = 2;
-                snprintf(writeMessage.mtext, sizeof(writeMessage.mtext), "%d", opNum);
-                strcat(writeMessage.mtext," ");
-                strcat(writeMessage.mtext,graphFileName);
+            if (msgsnd(msqid, &terminateMessageSecondary1, sizeof(terminateMessageSecondary1.mtext), 0) == -1)
+            {
+                perror("Error sending message");
+                exit(EXIT_FAILURE);
+            }
+            if (msgsnd(msqid, &terminateMessageSecondary2, sizeof(terminateMessageSecondary2.mtext), 0) == -1)
+            {
+                perror("Error sending message");
+                exit(EXIT_FAILURE);
+            }
+            sleep(5);
+            msgctl(msqid, IPC_RMID, NULL);
+            exit(0);
+        }
 
-                if (msgsnd(msqid, &writeMessage, sizeof(writeMessage.mtext), 0) == -1) {
-                    perror("Error sending message to the primary server");
-                    exit(EXIT_FAILURE);
-                }
-            }
-            else if(opNum == 3 || opNum == 4){
-                // logic for secondary server
-                message readMessage;
-                readMessage.mtype = 3;
-                snprintf(readMessage.mtext, sizeof(readMessage.mtext), "%d", opNum);
-                strcat(readMessage.mtext," ");
-                strcat(readMessage.mtext,graphFileName);
+        char seqNum[4];
+        int opNum;
+        char graphFileName[50];
+        printf("Hello");
 
-                if (msgsnd(msqid, &readMessage, sizeof(readMessage.mtext), 0) == -1) {
-                    perror("Error sending message to the secondary server");
-                    exit(EXIT_FAILURE);
-                }
+        if (sscanf(receiveMessage.mtext, "%s %d %49s", seqNum, &opNum, graphFileName) != 3)
+        {
+            fprintf(stderr, "Error parsing the received message\n");
+            exit(EXIT_FAILURE);
+        }
+        if (opNum == 1 || opNum == 2)
+        {
+            // logic for primary server
+            message writeMessage;
+            writeMessage.mtype = 102;
+            snprintf(writeMessage.mtext, sizeof(writeMessage.mtext), "%d", opNum);
+            strcat(writeMessage.mtext, " ");
+            
+            strcat(writeMessage.mtext, seqNum);
+            strcat(writeMessage.mtext, " ");
+            strcat(writeMessage.mtext, graphFileName);
+
+            if (msgsnd(msqid, &writeMessage, sizeof(writeMessage.mtext), 0) == -1)
+            {
+                perror("Error sending message to the primary server");
+                exit(EXIT_FAILURE);
             }
-            else {
-                fprintf(stderr,"Invalid operation number");
+        }
+        else if (opNum == 3 || opNum == 4)
+        {
+            // logic for secondary server
+            message readMessage;
+            if(atoi(seqNum) % 2 == 0)
+            {
+                readMessage.mtype = 103;
+
             }
+            else
+            {
+                readMessage.mtype = 108;
+            }
+            snprintf(readMessage.mtext, sizeof(readMessage.mtext), "%d", opNum);
+            strcat(readMessage.mtext, " ");
+            strcat(readMessage.mtext, seqNum);
+            strcat(readMessage.mtext," ");
+            strcat(readMessage.mtext, graphFileName);
+
+            if (msgsnd(msqid, &readMessage, sizeof(readMessage.mtext), 0) == -1)
+            {
+                perror("Error sending message to the secondary server");
+                exit(EXIT_FAILURE);
+            }
+        }
+        else
+        {
+            fprintf(stderr, "Invalid operation number");
         }
     }
 
