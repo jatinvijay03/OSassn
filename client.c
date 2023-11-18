@@ -66,19 +66,23 @@ int main() {
                 perror("Error creating the shared memory");
                 exit(-2);
             }
-            int *shmptr = (int *)shmat(shmid,NULL,0);
-            *shmptr = numNodes;
-            shmptr++;
+            
             int adjMatrix[numNodes][numNodes];
             printf("Enter the adjacency matrix, each row on a separate line, and elements of a single row separated by whitespace characters:\n");
             for (int i = 0; i < numNodes; i++) {
                 for (int j = 0; j < numNodes; j++) {
                     scanf("%d", &adjMatrix[i][j]);
+                }
+            }
+            int *shmptr = (int *)shmat(shmid,NULL,0);
+            *shmptr = numNodes;
+            shmptr++;
+            for (int i = 0; i < numNodes; i++) {
+                for (int j = 0; j < numNodes; j++) {
                     *shmptr=adjMatrix[i][j];
                     shmptr++;
                 }
             }
-            
             if (msgsnd(msqid, &sendMessage, sizeof(sendMessage.mtext), 0) == -1) {
             printf("Error in sending message to load balancer\n");
             exit(-1);

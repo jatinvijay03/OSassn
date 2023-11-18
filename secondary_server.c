@@ -112,6 +112,28 @@ int main()
         return 0;
     }
       
+void *populateMatrix(void *fileName)
+{
+    FILE *file = fopen(fileName, "r");
+    if (file == NULL)
+    {
+        perror("Error opening file");
+        exit(0);
+    }
+
+    fscanf(file, "%d", &maxNodes);
+
+    for (int i = 0; i < maxNodes; i++)
+    {
+        for (int j = 0; j < maxNodes; j++)
+        {
+            fscanf(file, "%d", &adjMatrix[i][j]);
+        }
+    }
+    fclose(file);
+
+    pthread_exit(NULL);
+}
 
 void *DFS(void *fileName)
 {   
@@ -149,6 +171,8 @@ void *DFS(void *fileName)
         perror("Error opening file");
         exit(0);
     }
+
+
 
     fscanf(file, "%d", &maxNodes);
 
