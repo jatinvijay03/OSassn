@@ -29,9 +29,9 @@ int main() {
     char isTerminate;
     while(1) {
         printf("Want to terminate the application? Press Y(Yes) or N(No)");
-        scanf("%c",&isTerminate);
+        scanf(" %c",&isTerminate);
         if(isTerminate == 'Y' || isTerminate == 'y') {
-            // Send terminate message to all the load balancer
+            // Send terminate message to load balancer
             message terminateMessage;
             terminateMessage.mtype = 101;
             strcpy(terminateMessage.mtext, "Terminate");
