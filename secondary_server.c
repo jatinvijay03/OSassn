@@ -24,6 +24,9 @@ typedef struct
 char graphFileName[50];
 int maxNodes;
 int adjMatrix[30][30];
+int msqid;
+char sequenceNumber[4];
+int visited[30];
 
 
 void * DFS(void * fileName);
@@ -35,7 +38,7 @@ char result[60];
 int main()
 {
     key_t key;
-    int msqid;
+    
 
     key = ftok("load_balancer.c", 'A');
     if (key == -1)
@@ -70,7 +73,7 @@ int main()
                 exit(0);
             }
             int operation;
-            char sequenceNumber[4];
+            
 
             if (sscanf(writeRecMessage.mtext, "%d %s %49s", &operation, sequenceNumber, graphFileName) != 3)
             {
@@ -88,11 +91,7 @@ int main()
                     // DFS
                     pthread_t tid;
                     pthread_create(&tid, NULL, DFS, graphFileName);
-                    // sleep(100);
                     pthread_join(tid, NULL);
-                    // pthread_t pid2;
-                    // pthread_create(&pid2, NULL, DFS2, &startVer);
-                    // pthread_join(pid2, NULL);
                 }
                 else if (operation == 4)
                 {
@@ -105,14 +104,7 @@ int main()
                 {
                     printf("Invalid operation number\n");
                 }
-                message writeMessage;
-                writeMessage.mtype = atoi(sequenceNumber) + 1000;
-                strcpy(writeMessage.mtext, result);
-                if (msgsnd(msqid, &writeMessage, sizeof(writeMessage.mtext), 0) == -1)
-                {
-                    perror("Error sending message to the client");
-                    exit(EXIT_FAILURE);
-                }
+                
                 break;
             }
         }
@@ -122,7 +114,10 @@ int main()
       
 
 void *DFS(void *fileName)
-{
+{   
+    for(int i = 0;i<30;i++){
+        visited[i] = 0;
+    }
     key_t newkey = ftok("client.c", 'S');
     int shmid = shmget(newkey, sizeof(int), 0666);
     if (shmid == -1)
@@ -180,6 +175,15 @@ void *DFS(void *fileName)
     pthread_create(&pid2, NULL, DFS2, startVer);
     pthread_join(pid2, NULL);
     printf("output done");
+    sleep(1);
+    message writeMessage;
+    writeMessage.mtype = atoi(sequenceNumber) + 1000;
+    strcpy(writeMessage.mtext, result);
+    if (msgsnd(msqid, &writeMessage, sizeof(writeMessage.mtext), 0) == -1)
+    {
+        perror("Error sending message to the client");
+        exit(EXIT_FAILURE);
+    }
     pthread_exit(NULL);
 }
 
@@ -214,9 +218,10 @@ void *DFS2(void *arg) {
 
     ThreadInfo *info = (ThreadInfo *)malloc(sizeof(ThreadInfo));
     int flag = 1;
+    visited[i] = 1;
 
-    for (int j = i + 1; j < maxNodes; ++j) {
-        if (adjMatrix[i][j]) {
+    for (int j = 0; j < maxNodes; ++j) {
+        if (adjMatrix[i][j] && !visited[j]) {
             flag = 0;
 
             int *start = malloc(sizeof(*start));
