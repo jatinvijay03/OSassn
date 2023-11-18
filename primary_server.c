@@ -7,10 +7,13 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <semaphore.h>
 
 #define buf 1000*sizeof(int)
 
 key_t key;
+
+sem_t mutex;
 
 struct message {
     long mtype;
@@ -31,6 +34,7 @@ void *makeModify(void *fileName)
     int *shmptr = (int *)shmat(shmid,NULL,0);
     int numNode = *shmptr;
     printf("%d\n",numNode);
+    sem_wait(&mutex);
     FILE * file = fopen(fileName,"w");
     if (file == NULL) {
         perror("Error opening file");
@@ -50,6 +54,7 @@ void *makeModify(void *fileName)
     }
     printf("File modified successfully\n");
     fclose(file);
+    sem_post(&mutex);
     shmdt(shmptr);
     pthread_exit(0);
 }
@@ -62,7 +67,7 @@ int main() {
         perror("Error generating key");
         exit(EXIT_FAILURE);
     }
-
+    sem_init(&mutex, 0, 1); 
     while(1) {
         msqid = msgget(key, IPC_CREAT | 0666);
         if (msqid == -1) {
@@ -104,4 +109,5 @@ int main() {
         }
         
     }
+    sem_destroy(&mutex);
 }

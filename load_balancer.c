@@ -23,8 +23,6 @@ int main()
     int msqid;
     message receiveMessage;
 
-    if (access(CONTROL_FILE, F_OK) == -1)
-    {
         key = ftok("load_balancer.c", 'A');
         if (key == -1)
         {
@@ -37,18 +35,8 @@ int main()
             perror("Error creating message queue");
             exit(EXIT_FAILURE);
         }
-        int control_fd = open(CONTROL_FILE, O_CREAT | O_WRONLY, PERMISSIONS);
-        if (control_fd == -1)
-        {
-            perror("Error creating control file");
-            exit(EXIT_FAILURE);
-        }
         printf("Message queue created successfully by the load balancer\n");
-    }
-    else
-    {
-        printf("Message queue already exists. No need to create by the load balancer\n");
-    }
+
 
     while (1)
     {
@@ -126,12 +114,12 @@ int main()
             message readMessage;
             if(atoi(seqNum) % 2 == 0)
             {
-                readMessage.mtype = 103;
+                readMessage.mtype = 108;
 
             }
             else
             {
-                readMessage.mtype = 108;
+                readMessage.mtype = 103;
             }
             snprintf(readMessage.mtext, sizeof(readMessage.mtext), "%d", opNum);
             strcat(readMessage.mtext, " ");

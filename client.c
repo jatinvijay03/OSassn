@@ -55,8 +55,8 @@ int main() {
         strcat(sendMessage.mtext, " ");
         strcat(sendMessage.mtext, graphFileName);
         sendMessage.mtype = atoi(sequenceNumber);
-        key_t newkey=ftok("client.c", 'B');
         if (operationNumber == 1 || operationNumber == 2) {
+            key_t newkey=ftok("client.c", 'B');
             int numNodes;
             printf("Enter number of nodes of the graph: ");
             scanf("%d", &numNodes);
@@ -79,7 +79,6 @@ int main() {
                 }
             }
             
-            
             if (msgsnd(msqid, &sendMessage, sizeof(sendMessage.mtext), 0) == -1) {
             printf("Error in sending message to load balancer\n");
             exit(-1);
@@ -88,7 +87,7 @@ int main() {
             message receiveSuccessMessage;
           
             if (msgrcv(msqid, &receiveSuccessMessage, sizeof(receiveSuccessMessage.mtext), atoi(sequenceNumber)+1000, 0) == -1) {
-                perror("Error receiving message from the load balancer");
+                perror("Error receiving message from the primary server");
                 exit(EXIT_FAILURE);
             }
             printf("%s",receiveSuccessMessage.mtext);
@@ -104,13 +103,37 @@ int main() {
             int startVertex;
             printf("Enter the starting vertex: ");
             scanf("%d", &startVertex);
-            int shmid = shmget(newkey, buf, IPC_CREAT | 0666);
+            key_t newkeyS=ftok("client.c", 'S');
+            int shmid = shmget(newkeyS, buf, IPC_CREAT | 0666);
             if(shmid == -1) {
                 perror("Error creating the shared memory");
                 exit(-2);
             }
             int *shmptr = (int *)shmat(shmid,NULL,0);
             *shmptr = startVertex;
+
+            // shared memory is put, now sending message in msgqueue to lb
+
+            if (msgsnd(msqid, &sendMessage, sizeof(sendMessage.mtext), 0) == -1) {
+            printf("Error in sending message to load balancer\n");
+            exit(-1);
+            }
+            
+            // now we wait for answer from ss
+
+            message receiveSuccessMessage;
+          
+            if (msgrcv(msqid, &receiveSuccessMessage, sizeof(receiveSuccessMessage.mtext), atoi(sequenceNumber)+1000, 0) == -1) {
+                perror("Error receiving message from the primary server");
+                exit(EXIT_FAILURE);
+            }
+            printf("%s",receiveSuccessMessage.mtext);
+            shmdt(shmptr);
+            if (shmctl(shmid, IPC_RMID, NULL) == -1) 
+            {
+                perror("Error removing shared memory segment");
+                exit(EXIT_FAILURE);
+            }
         }
     }
 }
