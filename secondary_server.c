@@ -187,31 +187,6 @@ void *DFS(void *fileName)
     pthread_exit(NULL);
 }
 
-// void * DFS2(void * arg) {
-//     ThreadInfo *info = (ThreadInfo *)malloc(sizeof(ThreadInfo));
-//     int flag = 1;
-//     int i = *((int*)arg);
-//     free(arg);
-//     for (int j = i + 1; j < maxNodes; ++j)
-//     {
-//         if (adjMatrix[i][j])
-//         {
-//             flag = 0;
-
-//             int *start = malloc(sizeof(*start));
-//             *start = j;
-//             pthread_create(&info->tid, NULL, DFS2, start);
-//             pthread_join(info->tid, NULL);
-//         }
-//     }
-//     if (flag == 1)
-//     {
-//         printf("%d ", i + 1);
-//     }
-//     free(info);
-//     pthread_exit(NULL);
-// }
-
 void *DFS2(void *arg) {
     int i = *((int *)arg);
     free(arg);
